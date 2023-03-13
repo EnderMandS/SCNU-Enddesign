@@ -7,7 +7,7 @@ buffer_length = 400;
 fs = 200;
 f_range = (0:buffer_length-1)*(fs/buffer_length);
 fshift = (-buffer_length/2:buffer_length/2-1)*(fs/buffer_length);
-an_mode = 3; % 1acceleration 2fft 3eular
+an_mode = 2; % 1acceleration 2fft 3eular
 
 % 创建数据缓冲区
 ax_data = zeros(1,buffer_length);
@@ -39,7 +39,7 @@ switch an_mode
         ylabel("m^2/s");
         legend('ax','ay','az');
     case 2
-        disp("Running at fft mode");
+        disp("Running at fft mode");z
         an_ax_fft = animatedline('MaximumNumPoints',length(fshift),'Color',"#0072BD");
         an_ay_fft = animatedline('MaximumNumPoints',length(fshift),'Color',"#D95319");
         an_az_fft = animatedline('MaximumNumPoints',length(fshift),'Color',"#EDB120");
@@ -53,21 +53,23 @@ switch an_mode
         an_yaw = animatedline('MaximumNumPoints',2000,'Color',"#0072BD");
         an_pitch = animatedline('MaximumNumPoints',2000,'Color',"#D95319");
         an_roll = animatedline('MaximumNumPoints',2000,'Color',"#EDB120");
+        fuse = complementaryFilter("SampleRate",200,"HasMagnetometer",false,"OrientationFormat","quaternion");
         drawnow
         title('Eular Angle');
-        xlabel("t/ms");
+        xlabel("t/s");
         ylabel("degree");
         legend('yaw','pitch','roll');
 end
 
 data_cnt = 0;
 buffer_available = false;
-fuse = complementaryFilter("SampleRate",200,"HasMagnetometer",false,"OrientationFormat","quaternion");
 while 1
     [accel, gyro, timeStamps, ~] = imu_obj.read;
 
+
+
     % 数据转换
-    duration_ms = milliseconds(timeStamps);
+    duration_s = seconds(timeStamps);
     ax_t = accel(:,1);
     ay_t = accel(:,2);
     az_t = accel(:,3);
@@ -87,9 +89,9 @@ while 1
     %动态绘图
     switch an_mode
         case 1
-            addpoints(an_ax,duration_ms,ax_t);
-            addpoints(an_ay,duration_ms,ay_t);
-            addpoints(an_az,duration_ms,az_t);
+            addpoints(an_ax,duration_s,ax_t);
+            addpoints(an_ay,duration_s,ay_t);
+            addpoints(an_az,duration_s,az_t);
 %             addpoints(an_gx,duration_ms,gx_t);
 %             addpoints(an_gy,duration_ms,gy_t);
 %             addpoints(an_gz,duration_ms,gz_t);
@@ -110,9 +112,9 @@ while 1
             [orientation_q,~] = fuse(accel,gyro);
             eulerAngles = euler(orientation_q,'ZYX','point');
             eulerAngles = rad2deg(eulerAngles);
-            addpoints(an_yaw    ,duration_ms,eulerAngles(:,1));
-            addpoints(an_pitch  ,duration_ms,eulerAngles(:,2));
-            addpoints(an_roll   ,duration_ms,eulerAngles(:,3));
+            addpoints(an_yaw    ,duration_s,eulerAngles(:,1));
+            addpoints(an_pitch  ,duration_s,eulerAngles(:,2));
+            addpoints(an_roll   ,duration_s,eulerAngles(:,3));
     end
     drawnow
 end
@@ -123,3 +125,4 @@ function data_source = dataShiftAppend(data_source,data_append)
     data_source = circshift(data_source,-sam_per_read);
     data_source(1,buffer_length-sam_per_read+1:buffer_length) = data_append;
 end
+
