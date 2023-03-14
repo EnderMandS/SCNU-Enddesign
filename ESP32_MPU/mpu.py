@@ -3,21 +3,26 @@ Description:
 Autor: M
 Date: 2023-03-13 21:55:43
 LastEditors: M
-LastEditTime: 2023-03-14 19:25:24
+LastEditTime: 2023-03-14 22:22:35
 '''
-import machine
+import time
 class MPU6050():
+
     def __init__(self, i2c, addr=0x68):
         self.iic = i2c
         self.addr = addr
-        # self.iic.start()
-        self.iic.writeto(self.addr, bytearray([107, 0]))
-        # self.iic.stop()
 
+        # http://www.51hei.com/bbs/dpj-136277-1.html
+        # MPU掉电后所有设置清零
+        # 使能温度
+        i2c.writeto_mem(addr, 0x6B, bytearray([0])) 
+        # 不分频，关闭滤波器，g不自检 +-2000°/s，a不自检 +-2g
+        i2c.writeto_mem(addr, 0x19, bytearray([0, 0b00000111, 0b00011111,0]))
+        # 关闭FIFO
+        i2c.writeto_mem(addr, 0x23, bytearray([0])) 
+        
     def get_raw_values(self):
-        # self.iic.start()
         a = self.iic.readfrom_mem(self.addr, 0x3B, 14)
-        # self.iic.stop()
         return a
 
     def get_ints(self):
@@ -35,12 +40,14 @@ class MPU6050():
     def get_values(self):
         raw_ints = self.get_raw_values()
         vals = {}
+        vals["time"] = time.ticks_us()
         vals["ax"] = self.bytes_toint(raw_ints[0], raw_ints[1])
         vals["ay"] = self.bytes_toint(raw_ints[2], raw_ints[3])
         vals["az"] = self.bytes_toint(raw_ints[4], raw_ints[5])
-        vals["tmp"] = self.bytes_toint(raw_ints[6], raw_ints[7]) / 340.00 + 36.53
+        vals["tmp"] = self.bytes_toint(raw_ints[6], raw_ints[7]) # / 340.00 + 36.53
         vals["gx"] = self.bytes_toint(raw_ints[8], raw_ints[9])
         vals["gy"] = self.bytes_toint(raw_ints[10], raw_ints[11])
         vals["gz"] = self.bytes_toint(raw_ints[12], raw_ints[13])
         return vals  # returned in range of Int16
         # -32768 to 32767
+        
