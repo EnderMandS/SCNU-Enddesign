@@ -3,22 +3,21 @@ Description:
 Autor: M
 Date: 2023-03-13 21:55:43
 LastEditors: M
-LastEditTime: 2023-03-13 21:55:56
+LastEditTime: 2023-03-14 19:25:24
 '''
 import machine
-
 class MPU6050():
     def __init__(self, i2c, addr=0x68):
         self.iic = i2c
         self.addr = addr
-        self.iic.start()
+        # self.iic.start()
         self.iic.writeto(self.addr, bytearray([107, 0]))
-        self.iic.stop()
+        # self.iic.stop()
 
     def get_raw_values(self):
-        self.iic.start()
+        # self.iic.start()
         a = self.iic.readfrom_mem(self.addr, 0x3B, 14)
-        self.iic.stop()
+        # self.iic.stop()
         return a
 
     def get_ints(self):
