@@ -21,8 +21,7 @@ for i=0:sample_times-1
     accel_all(i*sam_per_read+1:(i+1)*sam_per_read,:) = accel;
     gyro_all(i*sam_per_read+1:(i+1)*sam_per_read,:) = gyro;
 end
-filename = strcat(string(datetime('now','Format','uuuu-MM-dd-HH-mm-ss')),'.mat');
-save(filename,"accel_all","gyro_all");
+
 
 [orientation_q,~] = fuse(accel_all,gyro_all);
 eulerAngles = euler(orientation_q,'ZYX','point');
