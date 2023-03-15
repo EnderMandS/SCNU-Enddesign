@@ -3,7 +3,7 @@ Description:
 Autor: M
 Date: 2023-03-13 21:55:43
 LastEditors: M
-LastEditTime: 2023-03-14 22:22:35
+LastEditTime: 2023-03-15 20:23:47
 '''
 import time
 class MPU6050():

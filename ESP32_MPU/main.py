@@ -3,7 +3,7 @@ Description:
 Autor: M
 Date: 2023-03-13 21:54:04
 LastEditors: M
-LastEditTime: 2023-03-15 00:33:02
+LastEditTime: 2023-03-15 20:39:07
 '''
 
 import machine
@@ -20,14 +20,16 @@ def main():
     print('MPU Init success')
     # print(mpu_obj.get_raw_array())
 
-    # 偶校验 115200 tx=10, rx=9
-    uart = machine.UART(1,baudrate=115200, txbuf=1024, rxbuf=129, \
-                         parity=0 , timeout=100, timeout_char=100)
+    # 偶校验 tx17 rx16
+    uart = machine.UART(2,baudrate=115200, txbuf=1024, rxbuf=129, parity=0)
     print('UART Init success')
+
+    # GPIO Init
+    # p13 = machine.Pin(13, machine.Pin.IN)   # 用来退出while 1
     
     while 1:
         data = mpu_obj.get_raw_values()
-        print(uart.write(data))
+        uart.write(data)
     
 if __name__ == '__main__':
     main()
