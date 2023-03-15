@@ -50,4 +50,4 @@ class MPU6050():
         vals["gz"] = self.bytes_toint(raw_ints[12], raw_ints[13])
         return vals  # returned in range of Int16
         # -32768 to 32767
-        
+    

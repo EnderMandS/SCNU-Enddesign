@@ -3,10 +3,10 @@ Description:
 Autor: M
 Date: 2023-03-13 21:54:04
 LastEditors: M
-LastEditTime: 2023-03-15 20:39:07
+LastEditTime: 2023-03-15 22:32:58
 '''
 
-import machine
+import machine, time
 from mpu import MPU6050
 
 def main():
@@ -28,7 +28,10 @@ def main():
     # p13 = machine.Pin(13, machine.Pin.IN)   # 用来退出while 1
     
     while 1:
-        data = mpu_obj.get_raw_values()
+        mpu_data = mpu_obj.get_raw_values() #14
+        t = time.ticks_ms().to_bytes(4, 'little') #4
+        s = (sum(mpu_data + t)%256).to_bytes(1, 'little') #1
+        data = mpu_data + t + s + b'END' # 14+4+1+3=22
         uart.write(data)
     
 if __name__ == '__main__':
