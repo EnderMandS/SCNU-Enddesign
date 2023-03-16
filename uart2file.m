@@ -1,29 +1,45 @@
 % 将串口读取到的数据存入文件
 clear;
 readtime = 10; % 秒
+data_max_len = 300000;
 
 com = serialport("COM8",115200,"Parity","even","Timeout",1);
 
+% accel = zeros(300000,3);
+% gyro = zeros(300000,3);
+% time = zeros(300000,1);
+
+accel = [];
+gyro = [];
+time = [];
+
 time_start = datetime('now');
 while seconds(datetime('now')-time_start)<readtime
+    if com.NumBytesAvailable==0
+        pause(1);
+    end
     read_data = read(com,com.NumBytesAvailable,"uint8");
     frame_end_index = strfind(read_data,'END');
-    l_frame_end_index = length(frame_end_index);
-    if l_frame_end_index>1
-        for i=1:l_frame_end_index
-            if i==l_frame_end_index
+    len_frame_end_index = length(frame_end_index);
+    if len_frame_end_index>1
+        for i=1:len_frame_end_index
+            if i==len_frame_end_index
                 break
             end
-            frame = read_data((l_frame_end_index(i)+3):(l_frame_end_index(i+1)-1));
-            frameProcess(frame);
+            frame = read_data((frame_end_index(i)+3):(frame_end_index(i+1)-1));
+            [a, g, t] = frameProcess(frame);
+            if t~=0
+                accel = [accel; a];
+                gyro = [gyro; g];
+                time = [time; t];
+            end
         end
     end
 end
 clear com
 
 filename = strcat('data/',string(datetime('now','Format','uuuu-MM-dd-HH-mm-ss')),'.mat');
-save(filename,"accel","gyro");
-
+save(filename,"accel","gyro","time");
 
 function [accel,gyro,time] = frameProcess(frame)
     % mpu_data = mpu_obj.get_raw_values() #14
@@ -31,10 +47,25 @@ function [accel,gyro,time] = frameProcess(frame)
     % s = sum(mpu_data + t).to_bytes(1, 'little') #1
     % data = mpu_data + t + s + b'END' # 14+4+1+3=22
     if rem(sum(frame(1:18)),256)==frame(19)
-        time = frame(15)+frame(16)*256+frame(17)*65536+frame(18)*16777216;
+        time = frame(15)+frame(16)*2^8+frame(17)*2^16+(frame(18)&0b01111111)*2^24;
+        time = time/1000; % ms to s
         accel = zeros(1,3,'double');
         gyro = zeros(1,3,'double');
+        accel(1,1) = byte2double(frame(1),frame(2))/16384*9.8; % +-2g
+        accel(1,2) = byte2double(frame(3),frame(4))/16384*9.8;
+        accel(1,3) = byte2double(frame(5),frame(6))/16384*9.8;
+        gyro(1,1) = deg2rad(byte2double(frame(9),frame(10))/16.4); % +-2000°/s
+        gyro(1,2) = deg2rad(byte2double(frame(11),frame(12))/16.4);
+        gyro(1,3) = deg2rad(byte2double(frame(13),frame(14))/16.4);
     else
         time=0;
     end
+end
+
+function result = byte2double(first,second)
+    arguments
+        first (1,1) uint8
+        second (1,1) uint8
+    end
+    result = double(typecast(uint8([second,first]),'int16'));
 end
