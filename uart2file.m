@@ -42,6 +42,7 @@ clear com
 filename = strcat('data/',string(datetime('now','Format','uuuu-MM-dd-HH-mm-ss')),'.mat');
 fprintf('Saving file as %s\n', filename);
 save(filename,"accel","gyro","time","tmp");
+clear;
 disp("Complete");
 
 function [accel,gyro,time,tmp] = frameProcess(frame)
