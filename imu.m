@@ -7,7 +7,7 @@ buffer_length = 400;
 fs = 200;
 f_range = (0:buffer_length-1)*(fs/buffer_length);
 fshift = (-buffer_length/2:buffer_length/2-1)*(fs/buffer_length);
-an_mode = 2; % 1acceleration 2fft 3eular
+an_mode = 1; % 1acceleration 2fft 3eular
 
 % 创建数据缓冲区
 ax_data = zeros(1,buffer_length);
