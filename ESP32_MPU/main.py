@@ -3,7 +3,7 @@ Description:
 Autor: M
 Date: 2023-03-13 21:54:04
 LastEditors: M
-LastEditTime: 2023-03-20 22:02:12
+LastEditTime: 2023-03-21 21:47:29
 '''
 
 import machine, time

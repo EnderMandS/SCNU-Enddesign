@@ -3,7 +3,7 @@ clear;
 
 disp('Loading file');
 % TODO
-load( strcat('data/','2023-03-20-23-13-06','.mat') );
+load( strcat('data/','2023-03-21-22-39-43','.mat') );
 
 time_len = length(time);
 fs = floor(time_len / (time(time_len)-time(1)));
@@ -21,6 +21,15 @@ ylabel('m^2/s');
 plot(time,accel(:,1), time,accel(:,2), time,accel(:,3));
 grid on;
 legend('ax','ay','az');
+
+% мсбщрг
+figure('Name','Gyro');
+title('Gyroscope');
+xlabel('t/s');
+ylabel('rad/s');
+plot(time,gyro(:,1), time,gyro(:,2), time,gyro(:,3));
+grid on;
+legend('gx','gy','gz');
 
 % FFT
 ax_fft = fftshift(fft(accel(:,1)));
