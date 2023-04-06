@@ -3,7 +3,7 @@ clear;
 
 disp('Loading file');
 % TODO
-load( strcat('data/','2023-03-21-22-39-43','.mat') );
+load( strcat('data/','2023-04-06-22-35-13','.mat') );
 
 time_len = length(time);
 fs = floor(time_len / (time(time_len)-time(1)));
@@ -50,8 +50,35 @@ legend('ax','ay','az');
 fuse = complementaryFilter("SampleRate",fs,"HasMagnetometer",false,"OrientationFormat","quaternion");
 [orientation_q,~] = fuse(accel,gyro);
 eulerAngles = rad2deg(euler(orientation_q,'ZYX','point'));
-figure('Name', 'Eular Angle');
-title('Eular Angle');
+figure('Name', 'Complementary filter eular angle');
+title('Complementary filter eular angle');
+xlabel("t/s");
+ylabel("degree");
+plot(time,eulerAngles(:,1), time,eulerAngles(:,2), time,eulerAngles(:,3));
+grid on;
+legend('yaw','pitch','roll');
+
+% EKF
+clear fuse;
+clear eulerAngles;
+clear orientation_q;
+ins_accel = insAccelerometer;
+ins_gyro = insGyroscope;
+filter_EKF = insEKF(ins_accel,ins_gyro);
+stateparts(filter_EKF,"Orientation",[1 0 0 0]);
+statecovparts(filter_EKF,"Orientation",1e-2);
+accNoise = 0.01;
+gyroNoise = 0.01;
+processNoise = diag([0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]);
+filter_EKF.AdditiveProcessNoise = processNoise;
+for i = 1:length(time)
+    fuse(filter_EKF,ins_accel,accel(i,:),diag([0.1 0.1 0.1]));
+    fuse(filter_EKF,ins_gyro,gyro(i,:),diag([0.2 0.2 0.2]));
+    orientation_q(i) = quaternion(stateparts(filter_EKF,"Orientation"));
+end
+eulerAngles = rad2deg(euler(orientation_q,'ZYX','point'));
+figure('Name', 'EKF eular angle');
+title('EKF eular angle');
 xlabel("t/s");
 ylabel("degree");
 plot(time,eulerAngles(:,1), time,eulerAngles(:,2), time,eulerAngles(:,3));
