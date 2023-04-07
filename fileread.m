@@ -2,7 +2,7 @@
 clear;
 
 disp('Loading file');
-load( strcat('data/','2023-04-06-22-02-29','.mat') );
+load( strcat('data/','2023-04-07-15-56-18','.mat') );
 
 time_len = length(time);
 fs = floor(time_len / (time(time_len)-time(1)));
