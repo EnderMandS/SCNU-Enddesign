@@ -3,7 +3,7 @@ Description:
 Autor: M
 Date: 2023-03-13 21:55:43
 LastEditors: M
-LastEditTime: 2023-04-06 13:58:09
+LastEditTime: 2023-04-07 15:50:09
 '''
 import time
 class MPU6050():
@@ -16,7 +16,7 @@ class MPU6050():
         # MPU掉电后所有设置清零
         i2c.writeto_mem(addr, 0x6B, bytearray([0b00000000])) # 使能温度
         i2c.writeto_mem(addr, 0x19, bytearray([0b00000000])) # 不分频
-        i2c.writeto_mem(addr, 0x1A, bytearray([0b00000111])) # 关闭滤波器
+        i2c.writeto_mem(addr, 0x1A, bytearray([0b00000000])) # 关闭滤波器
         i2c.writeto_mem(addr, 0x1B, bytearray([0b00011000])) # gyro量程+-2000°/s
         i2c.writeto_mem(addr, 0x1C, bytearray([0b00001000])) # 加速度量程+-4g
         i2c.writeto_mem(addr, 0x23, bytearray([0b00000000])) # 关闭FIFO
