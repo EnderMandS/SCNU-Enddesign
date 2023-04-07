@@ -2,18 +2,19 @@
 clear;
 
 disp('Loading file');
-% TODO
-load( strcat('data/','2023-04-06-22-35-13','.mat') );
+load( strcat('data/','2023-04-06-22-02-29','.mat') );
 
 time_len = length(time);
 fs = floor(time_len / (time(time_len)-time(1)));
 fft_len = (-time_len/2:time_len/2-1)*(fs/time_len);
 
-for i = time_len:1  % time从0开始
-    time(i) = time(i)-time(1);
+start_time = time(1);
+for i = 1:time_len  % time从0开始
+    time(i) = time(i)-start_time;
 end
 
 % 加速度
+disp('Calculating accleration');
 figure('Name','Accleration');
 title('Accleration');
 xlabel('t/s');
@@ -23,6 +24,7 @@ grid on;
 legend('ax','ay','az');
 
 % 陀螺仪
+disp('Calculating gyroscope');
 figure('Name','Gyro');
 title('Gyroscope');
 xlabel('t/s');
@@ -32,6 +34,7 @@ grid on;
 legend('gx','gy','gz');
 
 % FFT
+disp('Calculating FFT');
 ax_fft = fftshift(fft(accel(:,1)));
 ay_fft = fftshift(fft(accel(:,2)));
 az_fft = fftshift(fft(accel(:,3)));
@@ -47,8 +50,21 @@ grid on;
 legend('ax','ay','az');
 
 % 互补对称滤波Euler角
-fuse = complementaryFilter("SampleRate",fs,"HasMagnetometer",false,"OrientationFormat","quaternion");
-[orientation_q,~] = fuse(accel,gyro);
+disp('Calculating complementary eular angle');
+
+% comFilter = complementaryFilter("SampleRate",fs,"HasMagnetometer",false, ... 
+%     "OrientationFormat","quaternion","AccelerometerGain",0.8);
+% [orientation_q,~] = comFilter(accel,gyro);
+
+addpath('quaternion_library');
+AHRS = MahonyAHRS('SamplePeriod',1/fs, 'Kp',0.5, 'Ki',0.01);
+orientation_q = zeros(time_len, 4);
+for i = 1:time_len
+    AHRS.UpdateIMU(gyro(i,:), accel(i,:)/9.7883);	% gyroscope units must be radians
+    orientation_q(i,:) = AHRS.Quaternion;
+end
+orientation_q = quaternion(quaternConj(orientation_q));
+
 eulerAngles = rad2deg(euler(orientation_q,'ZYX','point'));
 figure('Name', 'Complementary filter eular angle');
 title('Complementary filter eular angle');
@@ -59,7 +75,7 @@ grid on;
 legend('yaw','pitch','roll');
 
 % EKF
-clear fuse;
+disp('Calculating EKF eular angle');
 clear eulerAngles;
 clear orientation_q;
 ins_accel = insAccelerometer;
@@ -86,6 +102,7 @@ grid on;
 legend('yaw','pitch','roll');
 
 % Allan方差分析
+disp('Calculating allanvar');
 [avar,tau] = allanvar(accel,1:floor((time_len-1)/2),fs);
 axAvar = avar(:,1);
 ayAvar = avar(:,2);
