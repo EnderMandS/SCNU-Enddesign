@@ -21,7 +21,7 @@ az_fft = fftshift(fft(accel(:,3)));
 ax_power = abs(ax_fft).^2/time_len;
 ay_power = abs(ay_fft).^2/time_len;
 az_power = abs(az_fft).^2/time_len;
-figure('Name', 'FFT before filter');
+fft_before = figure('Name', 'FFT before filter');
 title('FFT before filter');
 xlabel("f (Hz)");
 ylabel("|P(f)|");
@@ -37,7 +37,7 @@ for i=fix(length(fft_len)/2):length(fft_len)
 end
 [power_max,power_max_i] = max(cat(1,ax_power(start_index:end), ...
     ay_power(start_index:end),az_power(start_index:end)));
-power_threshold = 0.2;      %搜索阈值
+power_threshold = 0.1;      %搜索阈值
 in_stop = false;
 stop_low = []; stop_up = [];
 for i=start_index:length(fft_len)
@@ -69,10 +69,18 @@ else
     stop_low_com = stop_low(1);
     stop_up_com = stop_up(1);
 end
+max_com = zeros(1,length(stop_low_com));
+for i=1:length(stop_low_com)
+    start_index = find(fft_len>stop_low_com(i), 1, 'first');
+    end_index = find(fft_len<stop_up_com(i), 1, 'last');
+    max_com(i) = max(cat(1,ax_power(start_index:end_index), ...
+        ay_power(start_index:end_index), ...
+        az_power(start_index:end_index)));
+end
 
 disp(['Find ', num2str(length(stop_low_com)), ' stop band']);
-N = [];
-Wn = [];
+N = zeros(1,length(stop_low_com));
+Wn = zeros(length(stop_low_com),2);
 a = [];
 b = [];
 for i=1:length(stop_low_com)
@@ -82,30 +90,15 @@ for i=1:length(stop_low_com)
     wp = [2*fpl/fs, 2*fpu/fs];
     rp = 1;                     %幅度失真dB
     rs = 40;                    %衰减dB
-    [N_t, Wn_t] = ellipord(wp,ws,rp,rs)
-    [b_t,a_t] = ellip(N_t,rp,rs,Wn_t,'stop');
+    [N(i), Wn(i,:)] = ellipord(wp,ws,rp,rs)
+    [b_t,a_t] = ellip(N(i),rp,rs,Wn(i,:),'stop');
+    b = [b,b_t]; a = [a,a_t];
     name = join(['Frequency response ', num2str(i)]);
     figure('Name', name);
     title(name);
     freqz(b_t,a_t)
     accel = filter(b_t,a_t,accel);
-    N = [N,N_t]; Wn = [Wn,Wn_t]; b = [b,b_t]; a = [a,a_t];
 end
-
-
-% fsl = 19; fsu = 25;         %滤除频段
-% fpl = fsl-5; fpu = fsu+5;   %保留频段
-% ws = [2*fsl/fs, 2*fsu/fs];  %边界频率归一化
-% wp = [2*fpl/fs, 2*fpu/fs];
-% rp = 1;                     %幅度失真dB
-% rs = 40;                    %衰减dB
-% [N, Wn] = ellipord(wp,ws,rp,rs)
-% [b,a] = ellip(N,rp,rs,Wn,'stop');
-% figure('Name', 'Frequency response');
-% title('Frequency response');
-% freqz(b,a)
-% disp('Calculating accleration');
-% accel = filter(b,a,accel);
 
 % FFT
 disp('Calculating FFT');
@@ -120,9 +113,29 @@ title('FFT after filter');
 xlabel("f (Hz)");
 ylabel("|P(f)|");
 plot(fft_len,ax_power, fft_len,ay_power, fft_len,az_power);
+hold on;
+for i=1:length(stop_low_com)
+    rectangle('Position',[stop_low_com(i) 0 stop_up_com(i)-stop_low_com(i) max_com(i)],...
+        'EdgeColor',"#7E2F8E");
+    rectangle('Position',[-stop_up_com(i) 0 stop_up_com(i)-stop_low_com(i) max_com(i)],...
+        'EdgeColor',"#7E2F8E");
+end
+hold off;
 grid on;
 legend('ax','ay','az');
 
+% 添加滤波范围到滤波前的FFT图像
+figure(fft_before);
+hold on;
+for i=1:length(stop_low_com)
+    rectangle('Position',[stop_low_com(i) 0 stop_up_com(i)-stop_low_com(i) max_com(i)],...
+        'EdgeColor',"#7E2F8E");
+        rectangle('Position',[-stop_up_com(i) 0 stop_up_com(i)-stop_low_com(i) max_com(i)],...
+        'EdgeColor',"#7E2F8E");
+end
+hold off;
+
+% Accleration
 figure('Name','Accleration after filter');
 title('Accleration after filter');
 xlabel('t/s');
